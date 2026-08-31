@@ -203,7 +203,7 @@ def _(
     return
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(mo):
     degree = mo.ui.slider(
         start=1,
@@ -248,6 +248,60 @@ def _(
     _ax.set_title(f"Polynomial regression fitted on training data, exp={_exp}, scaled")
     _ax.set_xlabel("Horsepower")
     _ax.set_ylabel("MPG")
+    _ax.legend()
+
+    plt.show()
+    return
+
+
+@app.cell
+def _(
+    LinearRegression,
+    PolynomialFeatures,
+    StandardScaler,
+    X_test,
+    X_train,
+    mean_squared_error,
+    np,
+    plt,
+    y_test,
+    y_train,
+):
+    _train_losses = []
+    _validation_losses = []
+
+    for _exp in range(1, 11):
+        _scaler = StandardScaler()
+        _poly = PolynomialFeatures(_exp, include_bias=False)
+        _reg = LinearRegression()
+
+        _X_train_scaled = _scaler.fit_transform(X_train)
+        _X_validation_scaled = _scaler.transform(X_test)
+
+        _X_train_poly = _poly.fit_transform(_X_train_scaled)
+        _X_validation_poly = _poly.transform(_X_validation_scaled)
+
+        _reg.fit(_X_train_poly, y_train)
+
+        _train_losses.append(
+            mean_squared_error(y_train, _reg.predict(_X_train_poly))
+        )
+        _validation_losses.append(
+            mean_squared_error(y_test, _reg.predict(_X_validation_poly))
+        )
+
+    _degrees = np.arange(1, 11)
+
+    _fig, _ax = plt.subplots()
+    _ax.plot(_degrees, _train_losses, marker="o", label="Training loss")
+    _ax.plot(_degrees, _validation_losses, marker="o", label="Validation loss")
+
+    _ax.set_title(
+        "Training and validation loss by polynomial degree, horsepower, scaled"
+    )
+    _ax.set_xlabel("Polynomial degree")
+    _ax.set_ylabel("MSE")
+    _ax.set_xticks(_degrees)
     _ax.legend()
 
     plt.show()
@@ -306,6 +360,83 @@ def _(
     _ax.set_ylabel("MSE")
     _ax.set_xticks(_degrees)
     _ax.legend()
+
+    plt.show()
+    return
+
+
+@app.cell
+def _(
+    LinearRegression,
+    PolynomialFeatures,
+    StandardScaler,
+    X_train_full,
+    X_validation_full,
+    mean_squared_error,
+    y_train_full,
+    y_validation_full,
+):
+    last_train_losses = []
+    last_validation_losses = []
+
+    for _exp in range(1, 11):
+        _scaler = StandardScaler()
+        _poly = PolynomialFeatures(_exp, include_bias=False)
+        _reg = LinearRegression()
+
+        _X_train_scaled = _scaler.fit_transform(X_train_full)
+        _X_validation_scaled = _scaler.transform(X_validation_full)
+
+        _X_train_poly = _poly.fit_transform(_X_train_scaled)
+        _X_validation_poly = _poly.transform(_X_validation_scaled)
+
+        _reg.fit(_X_train_poly, y_train_full)
+
+        last_train_losses.append(
+            mean_squared_error(y_train_full, _reg.predict(_X_train_poly))
+        )
+        last_validation_losses.append(
+            mean_squared_error(
+                y_validation_full,
+                _reg.predict(_X_validation_poly),
+            )
+        )
+    return last_train_losses, last_validation_losses
+
+
+@app.cell(hide_code=True)
+def _(last_validation_losses, mo):
+    y_limit = mo.ui.slider(
+        start=1,
+        stop=max(last_validation_losses),
+        step=1,
+        value=1,
+        label="Y_limit",
+        show_value=True,
+    )
+
+    y_limit
+
+    return (y_limit,)
+
+
+@app.cell(hide_code=True)
+def _(last_train_losses, last_validation_losses, np, plt, y_limit):
+    _degrees = np.arange(1, 11)
+
+    _fig, _ax = plt.subplots()
+    _ax.plot(_degrees, last_train_losses, marker="o", label="Training loss")
+    _ax.plot(_degrees, last_validation_losses, marker="o", label="Validation loss")
+
+    _ax.set_title(
+        "Training and validation loss by polynomial degree, all features, scaled"
+    )
+    _ax.set_xlabel("Polynomial degree")
+    _ax.set_ylabel("MSE")
+    _ax.set_xticks(_degrees)
+    _ax.legend()
+
+    _ax.set_ylim(0, y_limit.value)
 
     plt.show()
     return
